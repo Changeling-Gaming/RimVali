@@ -12,6 +12,22 @@ using System.Threading.Tasks;
 
 namespace AvaliMod
 {
+    #region ApparelUtility HasPartsToWear patch
+    [HarmonyPatch(typeof(ApparelUtility), "HasPartsToWear")]
+    public static class ApparelUtilityPatch
+    {
+        [HarmonyPostfix]
+        static void Patch(Pawn p, ThingDef apparel, ref bool __result)
+        {
+            __result = Restrictions.checkRestrictions(Restrictions.equipmentRestrictions, apparel, p.def);
+            if (p.def is RimValiRaceDef valiRaceDef && valiRaceDef.restrictions.canOnlyUseApprovedApparel && !ApparelPatch.CanWearHeavyRestricted(apparel, p))
+            {
+                __result = false;
+            }
+            __result = __result && true;
+        }
+    }
+    #endregion 
     #region Research restriction patch
 
     [HarmonyPatch(typeof(WorkGiver_Researcher), "ShouldSkip")]
@@ -445,12 +461,10 @@ namespace AvaliMod
     [HarmonyPatch(typeof(PawnApparelGenerator), "GenerateStartingApparelFor")]
     public class apparelPatch
     {
-
         [HarmonyPrefix]
         public static void GenerateStartingApparelForPrefix(Pawn pawn)
         {
             Traverse apparelInfo = Traverse.Create(typeof(PawnApparelGenerator)).Field(name: "allApparelPairs");
-
             foreach (ThingStuffPair pair in apparelInfo.GetValue<List<ThingStuffPair>>().ListFullCopy())
             {
                 ThingDef thing = pair.thing;
@@ -634,11 +648,10 @@ namespace AvaliMod
             #region raw
             if (ingester.def is RimValiRaceDef def && FoodUtility.IsHumanlikeMeat(foodDef))
             {
+
                 if (def.getAllCannibalThoughtRaces().Contains(foodDef.ingestible.sourceDef))
                 {
-
-
-                    __result.Replace(cannibal ? ThoughtDefOf.AteHumanlikeMeatDirectCannibal : ThoughtDefOf.AteHumanlikeMeatDirect, def.getEatenThought(ingredients.ingredients.First(x => def.getAllCannibalThoughtRaces().Contains(x.ingestible.sourceDef)), false, cannibal));
+                    __result.Replace(cannibal ? ThoughtDefOf.AteHumanlikeMeatDirectCannibal : ThoughtDefOf.AteHumanlikeMeatDirect, def.getEatenThought(foodDef.ingestible.sourceDef, true, cannibal));
                 }
                 else
                 {
@@ -682,7 +695,7 @@ namespace AvaliMod
             #endregion cooked
         }
     }
-    #endregio
+    #endregion
     #region Butcher patch
     [HarmonyPatch(typeof(Corpse), "ButcherProducts")]
     public static class ButcherPatch
@@ -749,6 +762,7 @@ namespace AvaliMod
                 //Races
                 if (pawn.def is RimValiRaceDef def)
                 {
+                    Log.Message("1 rDef");
                     butcherAndHarvestThoughts butcherAndHarvestThoughts = def.butcherAndHarvestThoughts;
                     if (butcherAndHarvestThoughts.butcherThoughts.Any(x => x.race == butchered.def))
                     {
@@ -766,25 +780,30 @@ namespace AvaliMod
                     }
                     if (def.butcherAndHarvestThoughts.careAboutUndefinedRaces)
                     {
+                        Log.Message("2 rDef");
                         if (butcher)
                         {
                             pawn.needs.mood.thoughts.memories.TryGainMemory(ThoughtDefOf.ButcheredHumanlikeCorpse);
                             return;
                         }
+                        Log.Message("3 rDef");
                         pawn.needs.mood.thoughts.memories.TryGainMemory(ThoughtDefOf.KnowButcheredHumanlikeCorpse);
                         return;
                     }
                 }
                 #endregion 
+                Log.Message("1 otherDef");
                 //If the pawn is not from RVR.
                 if (!(pawn.def is RimValiRaceDef))
                 {
                     if (butcher)
                     {
+                        Log.Message("2 otherDef");
                         //why tf isn't this happening?? the log.message happens
                         pawn.needs.mood.thoughts.memories.TryGainMemory(AvaliDefs.ButcheredHumanlikeCorpse, null);
                         return;
                     }
+                    Log.Message("3 otherDef");
                     pawn.needs.mood.thoughts.memories.TryGainMemory(AvaliDefs.KnowButcheredHumanlikeCorpse, null);
                 }
                 #endregion
