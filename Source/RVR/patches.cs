@@ -76,11 +76,7 @@ namespace AvaliMod
         public static Dictionary<ThingDef, List<ThingDef>> equipabblbleWhiteLists = new Dictionary<ThingDef, List<ThingDef>>();
 
 
-<<<<<<< HEAD
-        public static Dictionary<BodyTypeDef, List<ThingDef>> bodyTypes = new Dictionary<BodyTypeDef, List<ThingDef>>();
-=======
         public static Dictionary<ThingDef, List<BodyTypeDef>> bodyDefs = new Dictionary<ThingDef, List<BodyTypeDef>>();
->>>>>>> beta
 
         //Faction restrictions
         public static Dictionary<FactionDef, List<FacRes>> factionResearchRestrictions = new Dictionary<FactionDef, List<FacRes>>();
